@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="WMS — Hệ thống Quản lý Kho thông minh, tối ưu cho nhân viên vận hành ca dài." />
+  <title>WMS — Hệ thống Quản lý Kho</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════ LOGIN SCREEN ═══ -->
+  <div id="screen-login" class="screen active">
+    <div class="login-bg">
+      <div class="login-orb orb-1"></div>
+      <div class="login-orb orb-2"></div>
+      <div class="login-orb orb-3"></div>
+    </div>
+    <div class="login-container">
+      <div class="login-logo">
+        <div class="logo-icon">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+            <rect x="4" y="16" width="14" height="18" rx="2" fill="#3FB950" opacity="0.9"/>
+            <rect x="22" y="10" width="14" height="24" rx="2" fill="#58A6FF" opacity="0.9"/>
+            <rect x="4" y="6" width="14" height="8" rx="2" fill="#3FB950" opacity="0.5"/>
+            <path d="M18 22h4" stroke="#E6EDF3" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+        </div>
+        <div class="logo-text">
+          <h1>WMS</h1>
+          <span>Warehouse Management System</span>
+        </div>
+      </div>
+
+      <div class="login-card">
+        <h2>Đăng nhập ca làm việc</h2>
+        <p class="login-subtitle">Chọn vai trò và nhập mã nhân viên</p>
+
+        <div class="role-selector">
+          <button class="role-btn active" data-role="worker" id="role-worker">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            Nhân viên kho
+          </button>
+          <button class="role-btn" data-role="supervisor" id="role-supervisor">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 1-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            Giám sát / GS
+          </button>
+          <button class="role-btn" data-role="admin" id="role-admin">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+            Quản lý kho
+          </button>
+        </div>
+
+        <div class="form-group">
+          <label for="employee-id">Mã nhân viên</label>
+          <input type="text" id="employee-id" placeholder="Nhập mã (VD: NV001)" autocomplete="off" />
+        </div>
+        <div class="form-group">
+          <label for="password">Mật khẩu</label>
+          <input type="password" id="password" placeholder="••••••••" />
+        </div>
+
+        <button class="btn-login" id="btn-login" onclick="doLogin()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" y1="12" x2="3" y2="12"/></svg>
+          Đăng nhập
+        </button>
+
+        <div class="login-hint">
+          <span>Demo nhanh:</span>
+          <button onclick="quickLogin('worker')">NV kho</button>
+          <button onclick="quickLogin('supervisor')">Giám sát</button>
+          <button onclick="quickLogin('admin')">Admin</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ ADMIN DASHBOARD ═══ -->
+  <div id="screen-dashboard" class="screen">
+    <!-- Sidebar -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-logo">
+        <div class="logo-icon-sm">
+          <svg width="24" height="24" viewBox="0 0 40 40" fill="none">
+            <rect x="4" y="16" width="14" height="18" rx="2" fill="#3FB950"/>
+            <rect x="22" y="10" width="14" height="24" rx="2" fill="#58A6FF"/>
+          </svg>
+        </div>
+        <span>WMS</span>
+        <button class="sidebar-toggle" onclick="toggleSidebar()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        </button>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Tổng quan</div>
+        <a href="#" class="nav-item active" onclick="showDashTab('overview'); return false;" id="nav-overview">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          <span>Dashboard</span>
+        </a>
+
+        <div class="nav-section-label">Vận hành</div>
+        <a href="#" class="nav-item" onclick="showDashTab('orders'); return false;" id="nav-orders">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+          <span>Lệnh nhập/xuất</span>
+          <span class="nav-badge" id="badge-orders">5</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showDashTab('inventory'); return false;" id="nav-inventory">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+          <span>Tồn kho</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showDashTab('zonemap'); return false;" id="nav-zonemap">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 6 9 3 15 6 21 3 21 18 15 21 9 18 3 21"/><line x1="9" y1="3" x2="9" y2="18"/><line x1="15" y1="6" x2="15" y2="21"/></svg>
+          <span>Sơ đồ kho</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showDashTab('alerts'); return false;" id="nav-alerts">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+          <span>Cảnh báo</span>
+          <span class="nav-badge danger" id="badge-alerts">3</span>
+        </a>
+
+        <div class="nav-section-label">Báo cáo</div>
+        <a href="#" class="nav-item" onclick="showDashTab('reports'); return false;" id="nav-reports">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+          <span>Báo cáo ca</span>
+        </a>
+        <a href="#" class="nav-item" onclick="showDashTab('audit'); return false;" id="nav-audit">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+          <span>Lịch sử / Audit</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-info-sidebar">
+          <div class="user-avatar" id="sidebar-avatar">QK</div>
+          <div class="user-meta">
+            <span class="user-name" id="sidebar-name">Quản Kho</span>
+            <span class="user-role" id="sidebar-role">Admin</span>
+          </div>
+        </div>
+        <button class="btn-logout-sidebar" onclick="doLogout()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="main-content" id="main-content">
+      <header class="main-header">
+        <div class="header-left">
+          <h2 id="page-title">Dashboard Tổng quan</h2>
+          <span class="header-date" id="header-date"></span>
+        </div>
+        <div class="header-right">
+          <div class="connection-status online" id="conn-status">
+            <span class="conn-dot"></span>
+            <span>Online</span>
+          </div>
+          <button class="btn-pda-mode" onclick="showScreen('pda')">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18" x2="12" y2="18"/></svg>
+            Chế độ PDA
+          </button>
+          <button class="btn-icon" onclick="toggleNotifications()" id="btn-notif">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <span class="btn-badge">3</span>
+          </button>
+        </div>
+      </header>
+
+      <!-- TAB: OVERVIEW -->
+      <div class="tab-content active" id="tab-overview">
+        <!-- KPI Cards -->
+        <div class="kpi-grid">
+          <div class="kpi-card">
+            <div class="kpi-icon success"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-total-sku">4,872</span>
+              <span class="kpi-label">Tổng SKU trong kho</span>
+            </div>
+            <div class="kpi-trend up">+2.4% hôm nay</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon info"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-pending">18</span>
+              <span class="kpi-label">Lệnh đang xử lý</span>
+            </div>
+            <div class="kpi-trend">5 lệnh ưu tiên cao</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon warning"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value warning-text" id="kpi-alerts">7</span>
+              <span class="kpi-label">Cảnh báo tồn kho thấp</span>
+            </div>
+            <div class="kpi-trend warning-text">Cần bổ hàng ngay</div>
+          </div>
+          <div class="kpi-card">
+            <div class="kpi-icon success"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg></div>
+            <div class="kpi-data">
+              <span class="kpi-value" id="kpi-done-today">143</span>
+              <span class="kpi-label">Lệnh hoàn thành hôm nay</span>
+            </div>
+            <div class="kpi-trend up">+12% so với hôm qua</div>
+          </div>
+        </div>
+
+        <!-- Charts Row -->
+        <div class="charts-row">
+          <div class="chart-card wide">
+            <div class="chart-header">
+              <h3>Hoạt động Nhập/Xuất kho — 7 ngày qua</h3>
+              <div class="chart-legend">
+                <span class="legend-dot success"></span>Nhập kho
+                <span class="legend-dot info"></span>Xuất kho
+              </div>
+            </div>
+            <div class="chart-container">
+              <canvas id="chart-activity"></canvas>
+            </div>
+          </div>
+
+          <div class="chart-card">
+            <div class="chart-header">
+              <h3>Phân bố Khu kho</h3>
+            </div>
+            <div class="chart-container donut-container">
+              <canvas id="chart-zones"></canvas>
+              <div class="donut-center">
+                <span class="donut-value">82%</span>
+                <span class="donut-label">Lấp đầy</span>
+              </div>
+            </div>
+            <div class="zone-legend">
+              <div class="zone-legend-item"><span style="background:#FF6B35"></span>Khu A — Khô (34%)</div>
+              <div class="zone-legend-item"><span style="background:#00B4D8"></span>Khu B — Lạnh (28%)</div>
+              <div class="zone-legend-item"><span style="background:#FFD166"></span>Khu C — Dễ vỡ (18%)</div>
+              <div class="zone-legend-item"><span style="background:#9B5DE5"></span>Khu D — Giá trị cao (22%)</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom Row: Recent Orders + Staff Activity -->
+        <div class="bottom-row">
+          <div class="table-card wide">
+            <div class="table-header">
+              <h3>Lệnh gần đây</h3>
+              <button class="btn-text" onclick="showDashTab('orders')">Xem tất cả →</button>
+            </div>
+            <table class="data-table" id="recent-orders-table">
+              <thead>
+                <tr>
+                  <th>Mã lệnh</th>
+                  <th>Loại</th>
+                  <th>SKU</th>
+                  <th>Nhân viên</th>
+                  <th>Tiến độ</th>
+                  <th>Trạng thái</th>
+                </tr>
+              </thead>
+              <tbody id="recent-orders-body"></tbody>
+            </table>
+          </div>
+
+          <div class="table-card">
+            <div class="table-header">
+              <h3>Nhân viên đang làm việc</h3>
+              <span class="staff-count-badge">8 / 12 ca</span>
+            </div>
+            <div class="staff-list" id="staff-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: ORDERS -->
+      <div class="tab-content" id="tab-orders">
+        <div class="tab-toolbar">
+          <div class="filter-group">
+            <button class="filter-btn active" onclick="filterOrders('all')">Tất cả</button>
+            <button class="filter-btn" onclick="filterOrders('in')">Nhập kho</button>
+            <button class="filter-btn" onclick="filterOrders('out')">Xuất kho</button>
+            <button class="filter-btn" onclick="filterOrders('pending')">Chờ xử lý</button>
+          </div>
+          <button class="btn-primary" onclick="openNewOrder()">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Tạo lệnh mới
+          </button>
+        </div>
+        <table class="data-table" id="all-orders-table">
+          <thead>
+            <tr>
+              <th>Mã lệnh</th>
+              <th>Loại</th>
+              <th>Ngày tạo</th>
+              <th>SKU số</th>
+              <th>Nhân viên</th>
+              <th>Tiến độ</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="all-orders-body"></tbody>
+        </table>
+      </div>
+
+      <!-- TAB: INVENTORY -->
+      <div class="tab-content" id="tab-inventory">
+        <div class="tab-toolbar">
+          <div class="search-box">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+            <input type="text" id="inv-search" placeholder="Tìm mã SKU, tên sản phẩm…" oninput="filterInventory(this.value)" />
+          </div>
+          <div class="filter-group">
+            <button class="filter-btn active" onclick="filterInvStatus('all')">Tất cả</button>
+            <button class="filter-btn" onclick="filterInvStatus('ok')">🟢 Đủ hàng</button>
+            <button class="filter-btn" onclick="filterInvStatus('low')">🟡 Sắp hết</button>
+            <button class="filter-btn" onclick="filterInvStatus('out')">🔴 Hết hàng</button>
+          </div>
+        </div>
+        <table class="data-table" id="inventory-table">
+          <thead>
+            <tr>
+              <th>Mã SKU</th>
+              <th>Tên sản phẩm</th>
+              <th>Khu / Kệ</th>
+              <th>Tồn kho</th>
+              <th>Tối thiểu</th>
+              <th>Hạn sử dụng</th>
+              <th>Trạng thái</th>
+              <th>Hành động</th>
+            </tr>
+          </thead>
+          <tbody id="inventory-body"></tbody>
+        </table>
+      </div>
+
+      <!-- TAB: ZONE MAP -->
+      <div class="tab-content" id="tab-zonemap">
+        <div class="zone-map-container">
+          <div class="zone-map-header">
+            <h3>Sơ đồ Kho — Nhà máy ABC</h3>
+            <div class="zone-map-legend">
+              <span><i style="background:#3FB950"></i> Bình thường</span>
+              <span><i style="background:#E3B341"></i> Gần đầy</span>
+              <span><i style="background:#F85149"></i> Đầy / Quá tải</span>
+              <span><i style="background:#30363D"></i> Trống</span>
+            </div>
+          </div>
+          <div class="zone-map" id="zone-map"></div>
+        </div>
+      </div>
+
+      <!-- TAB: ALERTS -->
+      <div class="tab-content" id="tab-alerts">
+        <div class="alerts-container" id="alerts-list"></div>
+      </div>
+
+      <!-- TAB: REPORTS -->
+      <div class="tab-content" id="tab-reports">
+        <div class="report-grid">
+          <div class="report-summary-card">
+            <h3>Báo cáo ca sáng — 06:00–14:00</h3>
+            <div class="report-stats">
+              <div class="r-stat"><span class="r-val success-text">47</span><span class="r-label">Lệnh hoàn thành</span></div>
+              <div class="r-stat"><span class="r-val">1,284</span><span class="r-label">Đơn vị nhập kho</span></div>
+              <div class="r-stat"><span class="r-val">956</span><span class="r-label">Đơn vị xuất kho</span></div>
+              <div class="r-stat"><span class="r-val warning-text">3</span><span class="r-label">Sai lệch báo cáo</span></div>
+            </div>
+          </div>
+          <div class="chart-card">
+            <div class="chart-header"><h3>Hiệu suất theo nhân viên</h3></div>
+            <div class="chart-container"><canvas id="chart-staff-perf"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB: AUDIT LOG -->
+      <div class="tab-content" id="tab-audit">
+        <div class="audit-timeline" id="audit-timeline"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════ PDA SCREEN ═══ -->
+  <div id="screen-pda" class="screen pda-wrapper">
+    <div class="pda-device">
+      <!-- PDA Header -->
+      <div class="pda-header">
+        <div class="pda-header-left">
+          <button class="pda-back-btn" onclick="pdaBack()" id="pda-back-btn" style="display:none">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg>
+          </button>
+          <div class="pda-logo">WMS</div>
+        </div>
+        <div class="pda-header-right">
+          <div class="pda-wifi-indicator" id="pda-wifi">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3FB950" stroke-width="2"><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/></svg>
+          </div>
+          <div class="pda-battery">
+            <span class="battery-pct">87%</span>
+            <svg width="20" height="12" viewBox="0 0 20 12"><rect x="0" y="1" width="17" height="10" rx="2" stroke="#8B949E" stroke-width="1.5" fill="none"/><rect x="1" y="2" width="13" height="8" rx="1.5" fill="#3FB950"/><rect x="18" y="4" width="2" height="4" rx="1" fill="#8B949E"/></svg>
+          </div>
+          <button class="pda-exit-btn" onclick="showScreen('dashboard')" title="Về Admin">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <!-- PDA Content Area (multiple sub-screens) -->
+      <div class="pda-content" id="pda-content">
+
+        <!-- PDA HOME -->
+        <div class="pda-screen active" id="pda-home">
+          <div class="pda-greeting">
+            <span>Xin chào,</span>
+            <strong id="pda-user-name">Nguyễn Văn A</strong>
+          </div>
+          <div class="pda-shift-info">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Ca sáng: 06:00 – 14:00
+          </div>
+
+          <!-- PDA Task Cards -->
+          <div class="pda-task-list">
+            <button class="pda-task-card urgent" onclick="pdaNav('receive')">
+              <div class="ptc-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+              </div>
+              <div class="ptc-info">
+                <span class="ptc-title">Nhập kho</span>
+                <span class="ptc-sub">3 lệnh đang chờ</span>
+              </div>
+              <div class="ptc-badge urgent-badge">3</div>
+              <svg class="ptc-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button class="pda-task-card" onclick="pdaNav('pick')">
+              <div class="ptc-icon info-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+              </div>
+              <div class="ptc-info">
+                <span class="ptc-title">Lấy hàng (Picking)</span>
+                <span class="ptc-sub">5 lệnh được giao</span>
+              </div>
+              <div class="ptc-badge info-badge">5</div>
+              <svg class="ptc-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button class="pda-task-card" onclick="pdaNav('transfer')">
+              <div class="ptc-icon warning-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+              </div>
+              <div class="ptc-info">
+                <span class="ptc-title">Chuyển vị trí</span>
+                <span class="ptc-sub">2 yêu cầu chuyển kệ</span>
+              </div>
+              <div class="ptc-badge warning-badge">2</div>
+              <svg class="ptc-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+
+            <button class="pda-task-card" onclick="pdaNav('count')">
+              <div class="ptc-icon">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>
+              </div>
+              <div class="ptc-info">
+                <span class="ptc-title">Kiểm đếm kho</span>
+                <span class="ptc-sub">Cycle count định kỳ</span>
+              </div>
+              <svg class="ptc-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"/></svg>
+            </button>
+          </div>
+
+          <!-- PDA Quick Stats -->
+          <div class="pda-quick-stats">
+            <div class="pqs-item">
+              <span class="pqs-val success-text">47</span>
+              <span class="pqs-label">Hoàn thành</span>
+            </div>
+            <div class="pqs-divider"></div>
+            <div class="pqs-item">
+              <span class="pqs-val warning-text">3</span>
+              <span class="pqs-label">Sai lệch</span>
+            </div>
+            <div class="pqs-divider"></div>
+            <div class="pqs-item">
+              <span class="pqs-val">5.2h</span>
+              <span class="pqs-label">Thời gian làm việc</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDA RECEIVE (Nhập kho) -->
+        <div class="pda-screen" id="pda-receive">
+          <div class="pda-screen-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/></svg>
+            Nhập kho — Lệnh #NK-4521
+          </div>
+
+          <!-- Progress -->
+          <div class="pda-progress-section">
+            <div class="pda-progress-header">
+              <span>Tiến độ lệnh</span>
+              <span id="pda-recv-progress-text">1 / 4 SKU</span>
+            </div>
+            <div class="pda-progress-bar">
+              <div class="pda-progress-fill" id="pda-recv-progress-fill" style="width:25%"></div>
+            </div>
+          </div>
+
+          <!-- Current SKU to receive -->
+          <div class="pda-sku-card" id="pda-recv-sku-card">
+            <div class="pda-sku-header">
+              <span class="pda-sku-zone-badge" style="background:#FF6B35">Khu A</span>
+              <span class="pda-sku-step-indicator">Bước 1/3: Quét mã hàng</span>
+            </div>
+            <div class="pda-sku-code" id="pda-recv-sku-code">SP-00123</div>
+            <div class="pda-sku-name" id="pda-recv-sku-name">Bình sữa 250ml (Lốc 24 hộp)</div>
+            <div class="pda-sku-detail-row">
+              <div class="pda-detail-item">
+                <span class="pda-detail-label">Cần nhập</span>
+                <span class="pda-detail-value" id="pda-recv-qty-needed">24 thùng</span>
+              </div>
+              <div class="pda-detail-item">
+                <span class="pda-detail-label">Vị trí đặt</span>
+                <span class="pda-detail-value info-text" id="pda-recv-bin">A-03-B-07</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Step Indicator -->
+          <div class="pda-steps">
+            <div class="pda-step done" id="pda-step-1">
+              <div class="step-circle">✓</div>
+              <span>Quét mã hàng</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="pda-step active" id="pda-step-2">
+              <div class="step-circle">2</div>
+              <span>Nhập số lượng</span>
+            </div>
+            <div class="step-line"></div>
+            <div class="pda-step" id="pda-step-3">
+              <div class="step-circle">3</div>
+              <span>Quét mã kệ</span>
+            </div>
+          </div>
+
+          <!-- Action area changes per step -->
+          <div class="pda-action-area" id="pda-recv-action">
+            <!-- Step 2: Enter quantity -->
+            <div id="recv-step-2">
+              <div class="pda-qty-display" id="pda-qty-display">0</div>
+              <div class="pda-numpad">
+                <button class="numpad-btn" onclick="numpadPress('1')">1</button>
+                <button class="numpad-btn" onclick="numpadPress('2')">2</button>
+                <button class="numpad-btn" onclick="numpadPress('3')">3</button>
+                <button class="numpad-btn" onclick="numpadPress('4')">4</button>
+                <button class="numpad-btn" onclick="numpadPress('5')">5</button>
+                <button class="numpad-btn" onclick="numpadPress('6')">6</button>
+                <button class="numpad-btn" onclick="numpadPress('7')">7</button>
+                <button class="numpad-btn" onclick="numpadPress('8')">8</button>
+                <button class="numpad-btn" onclick="numpadPress('9')">9</button>
+                <button class="numpad-btn" onclick="numpadPress('clear')">C</button>
+                <button class="numpad-btn" onclick="numpadPress('0')">0</button>
+                <button class="numpad-btn numpad-del" onclick="numpadPress('del')">⌫</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Fixed Footer Action Buttons -->
+          <div class="pda-footer-actions">
+            <button class="pda-btn-secondary" onclick="pdaReportDiscrepancy()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+              Báo lỗi
+            </button>
+            <button class="pda-btn-primary" id="pda-recv-confirm-btn" onclick="pdaReceiveConfirm()">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+              XÁC NHẬN SỐ LƯỢNG
+            </button>
+          </div>
+        </div>
+
+        <!-- PDA PICKING -->
+        <div class="pda-screen" id="pda-pick">
+          <div class="pda-screen-title">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+            Lấy hàng — Đơn #ORD-88521
+          </div>
+
+          <div class="pda-progress-section">
+            <div class="pda-progress-header">
+              <span>Tiến độ Picking</span>
+              <span id="pda-pick-progress-text">0 / 5 SKU</span>
+            </div>
+            <div class="pda-progress-bar">
+              <div class="pda-progress-fill" id="pda-pick-progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="pda-pick-list" id="pda-pick-list"></div>
+
+          <div class="pda-footer-actions" style="padding-top:8px">
+            <button class="pda-btn-secondary" onclick="pdaNav('home')">← Về danh sách</button>
+            <button class="pda-btn-primary" id="pda-pick-done-btn" onclick="pdaPickComplete()" disabled>
+              ✅ Hoàn thành lấy hàng
+            </button>
+          </div>
+        </div>
+
+        <!-- PDA SCAN MODAL (overlay) -->
+        <div class="pda-scan-overlay" id="pda-scan-overlay">
+          <div class="scan-viewfinder">
+            <div class="scan-corner tl"></div>
+            <div class="scan-corner tr"></div>
+            <div class="scan-corner bl"></div>
+            <div class="scan-corner br"></div>
+            <div class="scan-line"></div>
+          </div>
+          <p class="scan-hint">Hướng camera vào mã vạch / QR code</p>
+          <div class="scan-sim-buttons">
+            <button class="scan-sim-btn success" onclick="simulateScan('success')">✓ Quét đúng</button>
+            <button class="scan-sim-btn fail" onclick="simulateScan('fail')">✗ Quét sai</button>
+          </div>
+          <button class="scan-close" onclick="closeScan()">Huỷ</button>
+        </div>
+
+        <!-- PDA FEEDBACK OVERLAY -->
+        <div class="pda-feedback-overlay" id="pda-feedback" style="display:none">
+          <div class="feedback-icon" id="feedback-icon"></div>
+          <div class="feedback-text" id="feedback-text"></div>
+        </div>
+
+        <!-- PDA COMPLETE SCREEN -->
+        <div class="pda-screen" id="pda-complete">
+          <div class="complete-animation">
+            <div class="complete-ring">
+              <svg width="80" height="80" viewBox="0 0 80 80">
+                <circle cx="40" cy="40" r="36" stroke="#3FB950" stroke-width="3" fill="none" stroke-dasharray="226" stroke-dashoffset="226" id="complete-circle"/>
+                <polyline points="26,40 36,52 56,28" stroke="#3FB950" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0" id="complete-check"/>
+              </svg>
+            </div>
+            <h2 class="complete-title">Hoàn thành!</h2>
+            <p class="complete-sub" id="complete-msg">Lệnh NK-4521 đã được ghi nhận thành công.</p>
+            <div class="complete-stats">
+              <div class="c-stat"><span id="c-qty">24</span><span>Đơn vị nhập</span></div>
+              <div class="c-stat"><span id="c-time">2:34</span><span>Thời gian</span></div>
+              <div class="c-stat"><span class="success-text">✓</span><span>Không sai lệch</span></div>
+            </div>
+            <button class="pda-btn-primary wide" onclick="pdaNav('home')">← Về trang chủ</button>
+          </div>
+        </div>
+
+        <!-- PDA DISCREPANCY REPORT -->
+        <div class="pda-screen" id="pda-discrepancy">
+          <div class="pda-screen-title danger-text">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/></svg>
+            Báo cáo Sai lệch
+          </div>
+          <div class="discrepancy-form">
+            <div class="disc-field">
+              <label>Mã SKU bị sai lệch</label>
+              <div class="disc-sku-display" id="disc-sku-display">SP-00123</div>
+            </div>
+            <div class="disc-field">
+              <label>Loại sai lệch</label>
+              <div class="disc-options">
+                <button class="disc-opt active" data-disc="qty">Sai số lượng</button>
+                <button class="disc-opt" data-disc="location">Sai vị trí kệ</button>
+                <button class="disc-opt" data-disc="damaged">Hàng bị hư</button>
+                <button class="disc-opt" data-disc="expired">Hàng hết hạn</button>
+                <button class="disc-opt" data-disc="missing">Không tìm thấy</button>
+              </div>
+            </div>
+            <div class="disc-field">
+              <label>Mô tả nhanh (tuỳ chọn)</label>
+              <textarea id="disc-note" rows="3" placeholder="Ghi chú thêm nếu cần..."></textarea>
+            </div>
+          </div>
+          <div class="pda-footer-actions">
+            <button class="pda-btn-secondary" onclick="pdaGoBack()">Huỷ</button>
+            <button class="pda-btn-danger" onclick="submitDiscrepancy()">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              Gửi báo cáo cho GS
+            </button>
+          </div>
+        </div>
+
+      </div><!-- end pda-content -->
+
+      <!-- PDA Scan Trigger Button (global) -->
+      <button class="pda-scan-fab" id="pda-scan-fab" onclick="openScan()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h1v1h-1z M16 14h1v1h-1z M14 16h1v1h-1z M16 16h3v3h-1v-1h-2v-1z M19 14h1v3h-1z"/></svg>
+        QUÉT MÃ
+      </button>
+    </div><!-- end pda-device -->
+  </div>
+
+  <!-- GLOBAL NOTIFICATION DRAWER -->
+  <div class="notif-drawer" id="notif-drawer">
+    <div class="notif-drawer-header">
+      <h3>Thông báo</h3>
+      <button onclick="toggleNotifications()">✕</button>
+    </div>
+    <div class="notif-list" id="notif-list"></div>
+  </div>
+  <div class="notif-overlay" id="notif-overlay" onclick="toggleNotifications()"></div>
+
+  <!-- TOAST -->
+  <div class="toast-container" id="toast-container"></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
