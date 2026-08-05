@@ -1433,7 +1433,7 @@ ul { list-style: none; }
 }
 .ptc-badge.urgent-badge  { background: var(--color-danger); }
 .ptc-badge.info-badge    { background: var(--color-info); }
-.ptc-badge.warning-badge { background: var(--color-warning); color: #000; }
+.ptc-badge.warning-badge { background: var(--color-warning); color: #0F172A; }
 
 .ptc-arrow { color: var(--text-muted); flex-shrink: 0; }
 
