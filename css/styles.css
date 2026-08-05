@@ -2260,3 +2260,45 @@ ul { list-style: none; }
 
 /* ─── CHART CANVAS ───────────────────────────────────────────── */
 canvas { max-width: 100%; max-height: 100%; }
+/* --- RESPONSIVE (MOBILE) ---------------------------------------- */
+@media (max-width: 768px) {
+  #screen-dashboard {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+  .sidebar {
+    width: 100%;
+    min-width: 100%;
+    height: auto;
+    border-right: none;
+    border-bottom: 1px solid var(--border-default);
+    flex-shrink: 0;
+  }
+  .sidebar.collapsed {
+    height: 60px;
+    overflow: hidden;
+  }
+  .main-content {
+    height: auto;
+    overflow: visible;
+  }
+  .dashboard-content {
+    padding: 12px;
+  }
+  
+  /* Grids stack vertically */
+  .stat-grid, .dash-row, .audit-header-row, .audit-grid, .pda-footer-actions {
+    grid-template-columns: 1fr !important;
+  }
+  
+  /* Scrollable tables and maps */
+  .dash-card, .table-container, .zone-map-wrapper {
+    overflow-x: auto;
+  }
+  .zone-grid {
+    min-width: 600px; /* Prevent shapes overlapping */
+  }
+  table {
+    min-width: 500px;
+  }
+}
