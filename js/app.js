@@ -86,13 +86,7 @@ function showScreen(name) {
 function applyRBAC() {
   const role = STATE.currentRole;
   
-  // 1. Worker: Cannot exit PDA to Dashboard
-  const pdaExitBtn = document.querySelector('.pda-exit-btn');
-  if (pdaExitBtn) {
-    pdaExitBtn.style.display = role === 'worker' ? 'none' : 'flex';
-  }
-  
-  // 2. Supervisor: Hide Reports & Audit Log
+  // 1. Supervisor: Hide Reports & Audit Log
   const reportsNav = document.getElementById('nav-reports');
   const auditNav = document.getElementById('nav-audit');
   if (reportsNav) {

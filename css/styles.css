@@ -1321,16 +1321,16 @@ ul { list-style: none; }
   font-family: var(--font-mono);
 }
 
-.pda-exit-btn {
+.pda-logout-btn {
   width: 32px; height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--text-muted);
+  color: var(--color-danger);
   border-radius: var(--radius-sm);
   transition: all var(--transition);
 }
-.pda-exit-btn:hover { color: var(--text-primary); background: var(--bg-hover); }
+.pda-logout-btn:hover { color: #fff; background: var(--color-danger); }
 
 /* PDA Content */
 .pda-content {
