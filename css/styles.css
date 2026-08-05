@@ -1261,6 +1261,7 @@ ul { list-style: none; }
   position: relative;
   width: 375px;
   height: 812px;
+  max-height: 90vh;
   background: #0C1526;
   border-radius: 40px;
   border: 2.5px solid #1E3A5F;
@@ -1460,8 +1461,14 @@ ul { list-style: none; }
   font-size: 14px;
   font-weight: 700;
   color: var(--text-secondary);
-  padding-bottom: 4px;
+  padding-bottom: 8px;
   border-bottom: 1px solid var(--border-muted);
+  position: sticky;
+  top: -16px;
+  background: var(--bg-primary);
+  z-index: 5;
+  margin: -16px -16px 14px -16px;
+  padding: 16px 16px 8px 16px;
 }
 
 .pda-progress-section { display: flex; flex-direction: column; gap: 8px; }
