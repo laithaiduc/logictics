@@ -233,10 +233,11 @@ function renderStaffList() {
   `).join('');
 }
 
-function renderOrdersTable() {
+function renderOrdersTable(data) {
   const tbody = document.getElementById('all-orders-body');
   if (!tbody) return;
-  tbody.innerHTML = WMS_DATA.orders.map(o => `
+  const items = data || WMS_DATA.orders;
+  tbody.innerHTML = items.map(o => `
     <tr>
       <td><span class="sku-code">${o.id}</span>${o.discrepancy ? ' <span title="Sai lệch" style="color:var(--color-warning)">⚠️</span>' : ''}</td>
       <td><span class="table-badge badge-${o.type === 'in' ? 'in' : 'out'}">${o.type === 'in' ? '📥 Nhập kho' : '📤 Xuất kho'}</span></td>
@@ -301,8 +302,17 @@ function filterInvStatus(status) {
 }
 
 function filterOrders(type) {
-  document.querySelectorAll('#tab-orders .filter-btn').forEach(b => b.classList.remove('active'));
-  event.target.classList.add('active');
+  if (window.event && window.event.target && window.event.target.classList) {
+    document.querySelectorAll('#tab-orders .filter-btn').forEach(b => b.classList.remove('active'));
+    window.event.target.classList.add('active');
+  }
+  
+  let filtered = WMS_DATA.orders;
+  if (type === 'in') filtered = filtered.filter(o => o.type === 'in');
+  else if (type === 'out') filtered = filtered.filter(o => o.type === 'out');
+  else if (type === 'pending') filtered = filtered.filter(o => o.status === 'pending');
+  
+  renderOrdersTable(filtered);
 }
 
 function renderZoneMap() {
