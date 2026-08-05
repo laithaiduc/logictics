@@ -514,7 +514,7 @@ function pdaNav(screen) {
   // FAB visibility
   const fab = document.getElementById('pda-scan-fab');
   if (fab) {
-    const hideFabOn = ['home', 'complete', 'discrepancy', 'transfer'];
+    const hideFabOn = ['home', 'complete', 'discrepancy', 'transfer', 'count'];
     fab.style.display = hideFabOn.includes(screen) ? 'none' : 'flex';
   }
 
