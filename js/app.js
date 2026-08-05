@@ -554,54 +554,7 @@ function closeScan() {
   document.getElementById('pda-scan-overlay').classList.remove('active');
 }
 
-function simulateScan(result) {
-  closeScan();
-
-  if (result === 'success') {
-    showPdaFeedback('success', '✅', 'Quét mã thành công!');
-
-    if (STATE.currentPdaScreen === 'receive') {
-      // Move to next step
-      if (STATE.recvStep === 1) {
-        STATE.recvStep = 2;
-        updateRecvSteps();
-      } else if (STATE.recvStep === 3) {
-        // Completed one item
-        STATE.recvProgress.done++;
-        const pct = Math.round((STATE.recvProgress.done / STATE.recvProgress.total) * 100);
-        document.getElementById('pda-recv-progress-fill').style.width = pct + '%';
-        document.getElementById('pda-recv-progress-text').textContent =
-          `${STATE.recvProgress.done} / ${STATE.recvProgress.total} SKU`;
-
-        setTimeout(() => {
-          if (STATE.recvProgress.done >= STATE.recvProgress.total) {
-            pdaNav('complete');
-          } else {
-            // Reset for next item
-            STATE.recvStep = 1;
-            STATE.recvQty  = '';
-            document.getElementById('pda-qty-display').textContent = '0';
-            updateRecvSteps();
-            showToast('SKU tiếp theo đã sẵn sàng!', 'info');
-          }
-        }, 600);
-      }
-    }
-
-    if (STATE.currentPdaScreen === 'pick') {
-      // Mark first unpicked item as picked
-      const first = STATE.pickItems.find(i => !i.picked);
-      if (first) {
-        first.picked = true;
-        STATE.pickDone++;
-        renderPickList();
-        updatePickProgress();
-      }
-    }
-  } else {
-    showPdaFeedback('fail', '❌', 'Mã không khớp!\nDừng lại và kiểm tra.');
-  }
-}
+/* ─── OLD SCAN REMOVED (Replaced by unified simulateScan at bottom) ─── */
 
 /* ─── PDA FEEDBACK VISUAL ───────────────────────────────────────── */
 function showPdaFeedback(type, icon, text) {
@@ -915,7 +868,7 @@ function setCountStep(step) {
 
 function countAction() {
   STATE.scanContext = 'count-bin';
-  openScan();
+  openScan('count-bin');
 }
 
 function countNumpad(key) {
@@ -1104,13 +1057,13 @@ function setTransferStep(step) {
 function transferAction() {
   if (STATE.tfStep === 1) {
     STATE.scanContext = 'tf-from';
-    openScan();
+    openScan('tf-from');
   } else if (STATE.tfStep === 2) {
     showPdaFeedback('success', '✅', 'Số lượng xác nhận!');
     setTimeout(() => setTransferStep(3), 500);
   } else if (STATE.tfStep === 3) {
     STATE.scanContext = 'tf-to';
-    openScan();
+    openScan('tf-to');
   }
 }
 
