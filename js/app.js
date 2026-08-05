@@ -10,15 +10,25 @@ const STATE = {
   currentPdaScreen: 'home',
   pdaHistory:    [],
   recvQty:       '',
-  recvStep:      2,        // 1=scan item, 2=enter qty, 3=scan bin
+  recvStep:      2,
   recvProgress:  { done: 1, total: 4 },
   pickItems:     [],
   pickDone:      0,
-  scanContext:   null,     // 'item' | 'bin' | 'pick'
+  scanContext:   null,  // 'item'|'bin'|'pick'|'count-bin'|'tf-from'|'tf-to'
   notifOpen:     false,
   charts:        {},
   startTime:     Date.now(),
+  // Cycle Count
+  countItems:    [],
+  countIdx:      0,
+  countStep:     1,
+  countQtyStr:   '',
+  // Transfer
+  transferTasks: [],
+  tfActiveIdx:   null,
+  tfStep:        1,
 };
+
 
 /* ─── INIT ─────────────────────────────────────────────────────── */
 window.addEventListener('DOMContentLoaded', () => {
@@ -26,10 +36,13 @@ window.addEventListener('DOMContentLoaded', () => {
   setInterval(updateHeaderDate, 60_000);
   renderNotifications();
   loadPickItems();
+  initCountItems();
+  initTransferTasks();
   setupDiscOptions();
   document.getElementById('employee-id').focus();
   document.addEventListener('keydown', handleGlobalKeys);
 });
+
 
 function handleGlobalKeys(e) {
   if (e.key === 'Enter' && STATE.currentScreen === 'login') doLogin();
@@ -476,12 +489,14 @@ function pdaNav(screen) {
   // FAB visibility
   const fab = document.getElementById('pda-scan-fab');
   if (fab) {
-    const hideFabOn = ['home', 'complete', 'discrepancy'];
+    const hideFabOn = ['home', 'complete', 'discrepancy', 'transfer'];
     fab.style.display = hideFabOn.includes(screen) ? 'none' : 'flex';
   }
 
   // Special init
-  if (screen === 'pick') renderPickList();
+  if (screen === 'pick')     renderPickList();
+  if (screen === 'count')    initCountScreen();
+  if (screen === 'transfer') renderTransferList();
   if (screen === 'complete') animateComplete();
 }
 
@@ -807,7 +822,367 @@ function daysUntil(dateStr) {
   return Math.ceil((target - now) / (1000 * 60 * 60 * 24));
 }
 
+/* ═══════════════════════════════════════════════════════════════
+   CYCLE COUNT — Kiểm đếm kho
+   ═══════════════════════════════════════════════════════════════ */
+function initCountItems() {
+  STATE.countItems  = JSON.parse(JSON.stringify(WMS_DATA.cycleCountItems));
+  STATE.countIdx    = 0;
+  STATE.countStep   = 1;
+  STATE.countQtyStr = '';
+}
+
+function initCountScreen() {
+  STATE.countIdx    = 0;
+  STATE.countStep   = 1;
+  STATE.countQtyStr = '';
+  STATE.countItems.forEach(i => { i.counted = false; i.actual = null; });
+  const resultList = document.getElementById('count-results-list');
+  if (resultList) resultList.innerHTML = '';
+  const numpad = document.getElementById('count-numpad-area');
+  if (numpad) numpad.style.display = 'none';
+  const fill = document.getElementById('count-progress-fill');
+  if (fill) fill.style.width = '0%';
+  const txt = document.getElementById('count-progress-text');
+  if (txt) txt.textContent = '0 / ' + STATE.countItems.length + ' kệ';
+  updateCountCard();
+  setCountStep(1);
+}
+
+function updateCountCard() {
+  const item = STATE.countItems[STATE.countIdx];
+  if (!item) return;
+  const zoneColors = { A:'#FF6B35', B:'#00B4D8', C:'#FFD166', D:'#9B5DE5' };
+  document.getElementById('count-zone-badge').textContent         = 'Khu ' + item.zone;
+  document.getElementById('count-zone-badge').style.background    = zoneColors[item.zone] || '#58A6FF';
+  document.getElementById('count-bin-code').textContent           = item.bin;
+  document.getElementById('count-sku-name').textContent           = item.name;
+  document.getElementById('count-sys-qty').textContent            = item.sysQty;
+  document.getElementById('count-actual-display').textContent     = '—';
+  document.getElementById('count-actual-display').style.color     = 'var(--text-muted)';
+  const qtyInput = document.getElementById('count-qty-input');
+  if (qtyInput) qtyInput.textContent = '0';
+  STATE.countQtyStr = '';
+}
+
+function setCountStep(step) {
+  STATE.countStep = step;
+  const s1 = document.getElementById('cnt-step-1');
+  const s2 = document.getElementById('cnt-step-2');
+  const numpad = document.getElementById('count-numpad-area');
+  const btn    = document.getElementById('count-action-btn');
+  if (!s1 || !s2 || !numpad || !btn) return;
+
+  s1.className = 'pda-step' + (step > 1 ? ' done' : ' active');
+  s1.querySelector('.step-circle').textContent = step > 1 ? '✓' : '1';
+  s2.className = 'pda-step' + (step === 2 ? ' active' : '');
+  s2.querySelector('.step-circle').textContent = '2';
+
+  document.getElementById('count-step-label').textContent =
+    step === 1 ? 'Bước 1/2: Quét mã kệ' : 'Bước 2/2: Nhập số thực đếm';
+
+  numpad.style.display = step === 2 ? 'block' : 'none';
+
+  if (step === 1) {
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> QUÉT MÃ KỆ`;
+    btn.onclick = countAction;
+  } else {
+    btn.innerHTML = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> XÁC NHẬN SỐ ĐẾM`;
+    btn.onclick = countConfirmQty;
+  }
+}
+
+function countAction() {
+  STATE.scanContext = 'count-bin';
+  openScan();
+}
+
+function countNumpad(key) {
+  const display = document.getElementById('count-qty-input');
+  if (!display) return;
+  if (key === 'clear')    STATE.countQtyStr = '';
+  else if (key === 'del') STATE.countQtyStr = STATE.countQtyStr.slice(0, -1);
+  else {
+    if (STATE.countQtyStr.length >= 5) return;
+    STATE.countQtyStr += key;
+  }
+  const val  = parseInt(STATE.countQtyStr) || 0;
+  display.textContent = STATE.countQtyStr || '0';
+
+  const item = STATE.countItems[STATE.countIdx];
+  if (!item) return;
+  const diff = item.sysQty > 0 ? Math.abs(val - item.sysQty) / item.sysQty : 0;
+  if (STATE.countQtyStr && val === item.sysQty)  display.style.color = 'var(--color-success)';
+  else if (STATE.countQtyStr && diff > 0.05)     display.style.color = 'var(--color-warning)';
+  else                                            display.style.color = 'var(--text-primary)';
+
+  const actualEl = document.getElementById('count-actual-display');
+  if (actualEl) {
+    actualEl.textContent = val || '—';
+    actualEl.style.color = val === item.sysQty ? 'var(--color-success)' : val > 0 ? 'var(--color-warning)' : 'var(--text-muted)';
+  }
+}
+
+function countConfirmQty() {
+  const actual = parseInt(STATE.countQtyStr) || 0;
+  if (actual === 0) { showToast('Nhập số thực đếm trước!', 'warning'); return; }
+
+  const item    = STATE.countItems[STATE.countIdx];
+  item.actual   = actual;
+  item.counted  = true;
+  const matched = actual === item.sysQty;
+  const diff    = Math.abs(actual - item.sysQty);
+
+  // Append result row
+  const resultEl = document.getElementById('count-results-list');
+  if (resultEl) {
+    const row = document.createElement('div');
+    row.className = 'count-result-item ' + (matched ? 'match' : 'mismatch');
+    row.innerHTML = `
+      <span class="cri-icon">${matched ? '✅' : '⚠️'}</span>
+      <span class="cri-bin">${item.bin}</span>
+      <span class="cri-sys">HT: ${item.sysQty}</span>
+      <span class="cri-actual ${matched ? 'ok' : 'warn'}">Đếm: ${actual}${!matched ? ' (±' + diff + ')' : ''}</span>
+    `;
+    resultEl.appendChild(row);
+    resultEl.scrollTop = resultEl.scrollHeight;
+  }
+
+  if (matched) {
+    showPdaFeedback('success', '✅', 'Khớp chính xác!');
+    showToast(`Kệ ${item.bin}: Đúng ${item.sysQty} đơn vị!`, 'success');
+  } else {
+    showPdaFeedback('fail', '⚠️', `Chênh lệch ${diff} đơn vị!`);
+    showToast(`Kệ ${item.bin}: Chênh ${diff} — đã báo GS`, 'warning');
+  }
+
+  STATE.countIdx++;
+  const total = STATE.countItems.length;
+  const done  = STATE.countIdx;
+  const fillEl = document.getElementById('count-progress-fill');
+  const txtEl  = document.getElementById('count-progress-text');
+  if (fillEl) fillEl.style.width = Math.round((done / total) * 100) + '%';
+  if (txtEl)  txtEl.textContent  = done + ' / ' + total + ' kệ';
+
+  if (done >= total) {
+    setTimeout(() => {
+      const msgEl = document.getElementById('complete-msg');
+      const qtyEl = document.getElementById('c-qty');
+      if (msgEl) msgEl.textContent = `Kiểm đếm ${total} kệ hoàn tất. Báo cáo đã gửi lên Giám sát.`;
+      if (qtyEl) qtyEl.textContent = total;
+      pdaNav('complete');
+      initCountItems();
+    }, 800);
+  } else {
+    setTimeout(() => { updateCountCard(); setCountStep(1); }, 700);
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TRANSFER — Chuyển vị trí kệ
+   ═══════════════════════════════════════════════════════════════ */
+function initTransferTasks() {
+  STATE.transferTasks = JSON.parse(JSON.stringify(WMS_DATA.transferTasks));
+  STATE.tfActiveIdx   = null;
+  STATE.tfStep        = 1;
+}
+
+function renderTransferList() {
+  const list     = document.getElementById('transfer-task-list');
+  const workflow = document.getElementById('transfer-workflow');
+  if (!list || !workflow) return;
+
+  list.style.display     = 'flex';
+  workflow.style.display = 'none';
+  STATE.tfActiveIdx      = null;
+
+  const pending = STATE.transferTasks.filter(t => !t.done).length;
+  const subEl   = document.getElementById('transfer-subtitle');
+  if (subEl) subEl.textContent = pending > 0
+    ? `${pending} yêu cầu chuyển kệ đang chờ`
+    : 'Tất cả đã hoàn thành! ✅';
+
+  list.innerHTML = STATE.transferTasks.map((t, idx) => `
+    <button class="tf-task-card${t.done ? ' done' : ''}" onclick="selectTransferTask(${idx})">
+      <div class="tf-task-icon${t.done ? ' done-icon' : ''}">
+        ${t.done ? '✅' : '🔄'}
+      </div>
+      <div class="tf-task-info">
+        <div class="tf-task-sku">${t.sku}</div>
+        <div class="tf-task-name">${t.name}</div>
+        <div class="tf-task-route">
+          <span class="tf-task-from">${t.from}</span>
+          <span class="tf-task-arrow">→</span>
+          <span class="tf-task-to">${t.to}</span>
+        </div>
+      </div>
+      <div class="tf-task-qty">×${t.qty}</div>
+    </button>
+  `).join('');
+}
+
+function selectTransferTask(idx) {
+  const task = STATE.transferTasks[idx];
+  if (!task || task.done) return;
+  STATE.tfActiveIdx = idx;
+  STATE.tfStep      = 1;
+
+  const zoneColors = { A:'#FF6B35', B:'#00B4D8', C:'#FFD166', D:'#9B5DE5' };
+  const zone = task.from.charAt(0);
+  const zoneBadge = document.getElementById('tf-zone-badge');
+  if (zoneBadge) { zoneBadge.textContent = 'Khu ' + zone; zoneBadge.style.background = zoneColors[zone] || '#58A6FF'; }
+
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+  set('tf-sku-code', task.sku);
+  set('tf-sku-name', task.name);
+  set('tf-from-bin', task.from);
+  set('tf-to-bin',   task.to);
+  set('tf-qty',      task.qty + ' ' + task.unit);
+  set('tf-reason',   task.reason);
+  set('tf-qty-confirm-val', task.qty + ' ' + task.unit);
+
+  document.getElementById('transfer-task-list').style.display = 'none';
+  const wf = document.getElementById('transfer-workflow');
+  wf.style.display = 'flex';
+
+  setTransferStep(1);
+}
+
+function setTransferStep(step) {
+  STATE.tfStep = step;
+  const ids = ['tf-step-1', 'tf-step-2', 'tf-step-3'];
+  const stepLabels = [
+    'Bước 1/3: Quét kệ NGUỒN',
+    'Bước 2/3: Xác nhận số lượng',
+    'Bước 3/3: Quét kệ ĐÍCH',
+  ];
+  const btnLabels = [
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> QUÉT KỆ NGUỒN`,
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> XÁC NHẬN SỐ LƯỢNG`,
+    `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg> QUÉT KỆ ĐÍCH`,
+  ];
+
+  ids.forEach((id, i) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const n = i + 1;
+    el.className = 'pda-step' + (n < step ? ' done' : n === step ? ' active' : '');
+    el.querySelector('.step-circle').textContent = n < step ? '✓' : String(n);
+  });
+
+  const stepLabelEl = document.getElementById('tf-step-label');
+  const actionBtn   = document.getElementById('tf-action-btn');
+  const qtyConfirm  = document.getElementById('tf-qty-confirm');
+  if (stepLabelEl) stepLabelEl.textContent     = stepLabels[step - 1];
+  if (actionBtn)   actionBtn.innerHTML         = btnLabels[step - 1];
+  if (qtyConfirm)  qtyConfirm.style.display    = step === 2 ? 'block' : 'none';
+
+  if (actionBtn) actionBtn.onclick = transferAction;
+}
+
+function transferAction() {
+  if (STATE.tfStep === 1) {
+    STATE.scanContext = 'tf-from';
+    openScan();
+  } else if (STATE.tfStep === 2) {
+    showPdaFeedback('success', '✅', 'Số lượng xác nhận!');
+    setTimeout(() => setTransferStep(3), 500);
+  } else if (STATE.tfStep === 3) {
+    STATE.scanContext = 'tf-to';
+    openScan();
+  }
+}
+
+function cancelTransfer() {
+  STATE.tfActiveIdx = null;
+  renderTransferList();
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UPDATED simulateScan — handles all scan contexts
+   ═══════════════════════════════════════════════════════════════ */
+function simulateScan(result) {
+  closeScan();
+
+  if (result === 'success') {
+    const ctx = STATE.scanContext;
+
+    // ─ Cycle Count: scan bin ─
+    if (ctx === 'count-bin') {
+      showPdaFeedback('success', '✅', 'Mã kệ xác nhận!');
+      setTimeout(() => setCountStep(2), 500);
+      return;
+    }
+
+    // ─ Transfer: scan source bin ─
+    if (ctx === 'tf-from') {
+      showPdaFeedback('success', '✅', 'Kệ nguồn xác nhận!');
+      setTimeout(() => setTransferStep(2), 500);
+      return;
+    }
+
+    // ─ Transfer: scan destination bin ─
+    if (ctx === 'tf-to') {
+      showPdaFeedback('success', '✅', 'Kệ đích xác nhận!');
+      const task = STATE.transferTasks[STATE.tfActiveIdx];
+      if (task) task.done = true;
+      setTimeout(() => {
+        const msgEl = document.getElementById('complete-msg');
+        const qtyEl = document.getElementById('c-qty');
+        if (msgEl) msgEl.textContent = `Đã chuyển ${task.qty} ${task.unit} "${task.name}" từ ${task.from} → ${task.to} thành công.`;
+        if (qtyEl) qtyEl.textContent = task.qty;
+        showToast(`Chuyển kệ hoàn thành: ${task.from} → ${task.to}`, 'success');
+        pdaNav('complete');
+      }, 600);
+      return;
+    }
+
+    // ─ Original receive / pick contexts ─
+    showPdaFeedback('success', '✅', 'Quét mã thành công!');
+    if (navigator.vibrate) navigator.vibrate([100]);
+
+    if (STATE.currentPdaScreen === 'receive') {
+      if (STATE.recvStep === 1) {
+        STATE.recvStep = 2;
+        updateRecvSteps();
+      } else if (STATE.recvStep === 3) {
+        STATE.recvProgress.done++;
+        const pct = Math.round((STATE.recvProgress.done / STATE.recvProgress.total) * 100);
+        document.getElementById('pda-recv-progress-fill').style.width = pct + '%';
+        document.getElementById('pda-recv-progress-text').textContent =
+          `${STATE.recvProgress.done} / ${STATE.recvProgress.total} SKU`;
+        setTimeout(() => {
+          if (STATE.recvProgress.done >= STATE.recvProgress.total) {
+            pdaNav('complete');
+          } else {
+            STATE.recvStep = 1;
+            STATE.recvQty  = '';
+            document.getElementById('pda-qty-display').textContent = '0';
+            updateRecvSteps();
+            showToast('SKU tiếp theo đã sẵn sàng!', 'info');
+          }
+        }, 600);
+      }
+    }
+
+    if (STATE.currentPdaScreen === 'pick') {
+      const first = STATE.pickItems.find(i => !i.picked);
+      if (first) {
+        first.picked = true;
+        STATE.pickDone++;
+        renderPickList();
+        updatePickProgress();
+      }
+    }
+
+  } else {
+    showPdaFeedback('fail', '❌', 'Mã không khớp!\nDừng lại và kiểm tra.');
+    if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+  }
+}
+
 /* ─── CHART.JS DYNAMIC LOAD ──────────────────────────────────────── */
+
 (function loadChartJS() {
   const script = document.createElement('script');
   script.src = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js';

@@ -81,6 +81,39 @@ const WMS_DATA = {
     outgoing: [72, 108, 88, 125, 102, 90, 127],
   },
 
+  // Cycle Count data
+  cycleCountItems: [
+    { bin: 'A-03-B-07', zone: 'A', sku: 'SP-00123', name: 'Bình sữa 250ml (Lốc 24)',    sysQty: 142, counted: false, actual: null },
+    { bin: 'A-01-C-02', zone: 'A', sku: 'SP-00456', name: 'Hộp bánh quy 200g',          sysQty: 18,  counted: false, actual: null },
+    { bin: 'B-02-A-05', zone: 'B', sku: 'SP-00789', name: 'Nước trái cây 500ml',         sysQty: 58,  counted: false, actual: null },
+    { bin: 'C-01-A-03', zone: 'C', sku: 'SP-01345', name: 'Cốc thủy tinh cao cấp',      sysQty: 65,  counted: false, actual: null },
+    { bin: 'D-01-A-01', zone: 'D', sku: 'SP-01678', name: 'Laptop Gaming X5 Pro',        sysQty: 8,   counted: false, actual: null },
+  ],
+
+  // Transfer tasks data
+  transferTasks: [
+    {
+      sku:    'SP-00123',
+      name:   'Bình sữa 250ml',
+      from:   'A-03-B-07',
+      to:     'A-01-A-01',
+      qty:    48,
+      unit:   'thùng',
+      reason: 'Tối ưu luồng picking — gần lối ra',
+      done:   false,
+    },
+    {
+      sku:    'SP-02234',
+      name:   'Cà phê rang xay 500g',
+      from:   'A-02-A-04',
+      to:     'A-03-C-06',
+      qty:    24,
+      unit:   'thùng',
+      reason: 'Kệ A-02 quá đầy (95%) — cân bằng tải',
+      done:   false,
+    },
+  ],
+
   zoneMap: (() => {
     const cells = [];
     const zones = ['A','A','A','A','B','B','B','C','D','D'];
