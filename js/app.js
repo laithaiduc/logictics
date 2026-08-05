@@ -83,6 +83,26 @@ function showScreen(name) {
   }
 }
 
+function applyRBAC() {
+  const role = STATE.currentRole;
+  
+  // 1. Worker: Cannot exit PDA to Dashboard
+  const pdaExitBtn = document.querySelector('.pda-exit-btn');
+  if (pdaExitBtn) {
+    pdaExitBtn.style.display = role === 'worker' ? 'none' : 'flex';
+  }
+  
+  // 2. Supervisor: Hide Reports & Audit Log
+  const reportsNav = document.getElementById('nav-reports');
+  const auditNav = document.getElementById('nav-audit');
+  if (reportsNav) {
+    reportsNav.style.display = role === 'admin' ? 'flex' : 'none';
+  }
+  if (auditNav) {
+    auditNav.style.display = role === 'admin' ? 'flex' : 'none';
+  }
+}
+
 /* ─── LOGIN ────────────────────────────────────────────────────── */
 function doLogin() {
   const id  = document.getElementById('employee-id').value.trim() || 'NV001';
@@ -109,6 +129,7 @@ function doLogin() {
   setTimeout(() => {
     btn.innerHTML = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg> Đăng nhập`;
     btn.disabled = false;
+    applyRBAC();
     showScreen(role === 'worker' ? 'pda' : 'dashboard');
     showToast(`Xin chào, ${user.name}!`, 'success');
   }, 800);
